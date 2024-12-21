@@ -6,7 +6,7 @@ authors = [
     {name = "Afroz Shaikh", email = "afrozsh19@gmail.com"}
 ]
 
-requires-python = "==3.10.*"
+requires-python = "==3.12.*"
 dependencies = [
     "torch>=2.5.1",
     "transformers>=4.43.3"
