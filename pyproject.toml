@@ -1,0 +1,28 @@
+[project]
+name = "llm-deployment-7b"
+version = "0.1.0"
+description = "A scalable model serving application with FastAPI and Ray Serve."
+authors = [
+    {name = "Afroz Shaikh", email = "afrozsh19@gmail.com"}
+]
+
+requires-python = "==3.10.*"
+dependencies = [
+    "torch>=2.5.1",
+    "transformers>=4.43.3"
+]
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=8.3.2",
+    "testcontainers>=4.7.2",
+    "requests>=2.32.3",
+    "cloudpickle>=3.0.0",
+    "pre-commit>=3.8.0",
+]
+
+[tool.ruff]
+line-length = 80
