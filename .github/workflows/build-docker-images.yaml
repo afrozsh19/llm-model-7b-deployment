@@ -18,7 +18,7 @@ on:
 
 jobs:
   docker-build-model-download-container:
-    uses: afrozsh19/githubWorkflows/.github/workflows/docker-image-builds.yaml@main
+    uses: afrozsh19/githubWorkflows/.github/workflows/main-docker-push.yaml@main
     secrets: inherit
     with:
       app-name: llm-model-download-container
@@ -26,7 +26,7 @@ jobs:
       rel-path: predownload-script 
 
   docker-build-model-service-fast-api:
-    uses: afrozsh19/githubWorkflows/.github/workflows/docker-image-builds.yaml@main
+    uses: afrozsh19/githubWorkflows/.github/workflows/main-docker-push.yaml@main
     secrets: inherit
     with:
       app-name: model-serving-fastapi
