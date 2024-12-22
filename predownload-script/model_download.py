@@ -33,16 +33,16 @@ def download_model(model_name, model_dir, hf_token, logger):
         
         tokenizer = AutoTokenizer.from_pretrained(
             model_name, 
-            cache_dir=model_dir,
             use_auth_token=hf_token
         )
+        tokenizer.save_pretrained(model_dir)
         logger.info(f"Tokenizer is downloaded at: {model_dir}")
     
         model = AutoModelForCausalLM.from_pretrained(
             model_name, 
-            cache_dir=model_dir,
             use_auth_token=hf_token
         )
+        model.save_pretrained(model_dir)
         logger.info(f"Model downloaded at: {model_dir}")
     
     except Exception as e:
@@ -54,8 +54,8 @@ def main():
     Main execution logic
     """
 
-    model_name = os.getenv("MODEL_NAM", "mistralai/Mistral-7B-v0.1")
-    model_dir = os.getenv("MODEL_DIR", "models/mistral-7b")
+    model_name = os.getenv("MODEL_NAME", "NickyNicky/experimental-Mistral-1b-V00")
+    model_dir = os.getenv("MODEL_DIR", "models/mistral-1b")
     hf_token = os.getenv("HF_TOKEN")
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 

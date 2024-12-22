@@ -1,28 +1,25 @@
-[project]
+[tool.poetry]
 name = "llm-deployment-7b"
 version = "0.1.0"
 description = "A scalable model serving application with FastAPI and Ray Serve."
-authors = [
-    {name = "Afroz Shaikh", email = "afrozsh19@gmail.com"}
-]
+authors = ["Afroz Shaikh <afrozsh19@gmail.com>"]
 
-requires-python = "==3.12.*"
-dependencies = [
-    "torch>=2.5.1",
-    "transformers>=4.43.3"
-]
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.110.0"
+uvicorn = "^0.22.0"
+ray = {version = "^2.7.0", extras = ["serve"]}
+transformers = "^4.40.0"
+torch = "^2.4.0"
+accelerate = "^0.26.0"
 
-[tool.pdm]
-distribution = false
+[tool.poetry.dev-dependencies]
+pytest = "^7.4"
+testcontainers = "^3.6.3"
+requests = "^2.28.0"
+cloudpickle = "^2.2.1"
+pre-commit = "^3.4.0"
 
-[tool.pdm.dev-dependencies]
-dev = [
-    "pytest>=8.3.2",
-    "testcontainers>=4.7.2",
-    "requests>=2.32.3",
-    "cloudpickle>=3.0.0",
-    "pre-commit>=3.8.0",
-]
-
-[tool.ruff]
-line-length = 80
+[build-system]
+requires = ["poetry-core>=1.3.0"]
+build-backend = "poetry.core.masonry.api"
