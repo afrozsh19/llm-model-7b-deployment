@@ -1,6 +1,7 @@
 import os
 import torch
 import traceback
+import logging
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
@@ -58,3 +59,23 @@ async def python_error_response(request: Request, e: Exception):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=get_error_response(e, CONFIG["debug"])
     )
+
+
+def log_config():
+    """Configure logging for the module."""
+
+    log_level = CONFIG["log_level"]
+
+    valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+
+    if log_level not in valid_log_levels:
+        log_level = "INFO"
+
+    logging.basicConfig(
+        level=log_level, 
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Logging level set to: {log_level}")
+    
+    return logger

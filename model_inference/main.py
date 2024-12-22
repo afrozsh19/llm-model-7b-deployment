@@ -11,7 +11,11 @@ from utils import (
     validation_error_response,
     python_error_response,
     get_device_in_use,
+    log_config,
     CONFIG )
+
+
+logger = log_config()
 
 
 @asynccontextmanager
@@ -20,14 +24,14 @@ async def lifespan(app: FastAPI):
     Initiliase the model and tokenizer using bitandbytes for low precision inference.
     """
     global tokenizer, model
-    # logger.info("Loading tokenizer into the context")
+    logger.debug("Loading tokenizer into the context")
     tokenizer = AutoTokenizer.from_pretrained(
         CONFIG.get("model_path"), 
         local_files_only=True
     )
 
     if CONFIG.get("use_bits_and_bytes"):
-        # logger.info("Loading model into the context")
+        logger.debug("Loading model into the context")
         model = AutoModelForCausalLM.from_pretrained(
             CONFIG.get("model_path"),
             device_map="auto",
@@ -35,27 +39,38 @@ async def lifespan(app: FastAPI):
             local_files_only=True
         )
     else:
-        # logger.info("Loading model into the context")
+        logger.debug("Loading model into the context")
         model = AutoModelForCausalLM.from_pretrained(
             CONFIG.get("model_path"),
             device_map="auto",
             local_files_only=True
         )
     model.eval()
+    logger.info("Model loaded successfully")
+
     yield
-    # logger.info("Model loaded successfully")
 
 
 async def predict(request: InferenceRequest):
     """
     Infer from the model and return response
     """
+    logger.info("Starting inferences from model")
+    logger.debug(f"Received inference with request {request}")
+
     prompt = "\n".join(f"{msg.role}: {msg.content}" for msg in request.messages)
+    logger.debug(f"Prompt for the model constructed as: {prompt}")
+
     inputs = tokenizer(prompt, return_tensors="pt").to(get_device_in_use())
     outputs = model.generate(inputs["input_ids"], max_length=100) # TODO: max_length can be accepted from users input
+    
     num_output_tokens = outputs.shape[1]
+    logger.debug(f"Number of output tokens: {num_output_tokens}")
+
     # convert a list of lists of token-ids into a list of strings
     results = [tokenizer.decode(x, skip_special_tokens=True) for x in outputs]
+    logger.debug(f"Returning results from model: {results}")
+
     return results[0]
 
 
@@ -80,16 +95,16 @@ async def health_check():
             messages=[{"role": "system", "content": "What is 1+2"}],
             params={"max_length": 10, "temperature": 0.1}
         )
-        print(test_input)
         response = await predict(test_input)
-        print(response)
         if response:
             return {
                 "status_code": 200, 
                 "response": "Healthy!! Model is ready to serve."}
         else: 
             raise HTTPException(status_code=503, detail="Model is not ready to serve")
+        
     except Exception as e:
+        logger.error(f"Encountered exception: {e}")
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
     
 
