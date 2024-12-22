@@ -1,0 +1,35 @@
+name: "build and push docker container images"
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      image-name:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+      docker-file-path: 
+        type: string
+        required: false
+
+jobs:
+  docker-build-model-download-container:
+    uses: afrozsh19/githubWorkflows/.github/workflows/docker-image-builds.yaml@main
+    secrets: inherit
+    with:
+      app-name: llm-model-download-container
+      app-version: v0.0.1
+      rel-path: predownload-script 
+
+  docker-build-model-service-fast-api:
+    uses: afrozsh19/githubWorkflows/.github/workflows/docker-image-builds.yaml@main
+    secrets: inherit
+    with:
+      app-name: model-serving-fastapi
+      app-version: v0.0.1
+      rel-path: model_inference
+
