@@ -21,15 +21,15 @@ jobs:
     uses: afrozsh19/githubWorkflows/.github/workflows/main-docker-push.yaml@main
     secrets: inherit
     with:
-      app-name: llm-model-download-container
-      app-version: v0.0.1
-      rel-path: predownload-script 
+      image-name: llm-model-download-container
+      image-tag: v0.0.1
+      docker-file-path: predownload-script 
 
   docker-build-model-service-fast-api:
     uses: afrozsh19/githubWorkflows/.github/workflows/main-docker-push.yaml@main
     secrets: inherit
     with:
-      app-name: model-serving-fastapi
-      app-version: v0.0.1
-      rel-path: model_inference
+      image-name: model-serving-fastapi
+      image-tag: v0.0.1
+      docker-file-path: model_inference
 
