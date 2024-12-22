@@ -24,7 +24,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     with:
       image-name: llm-model-download-container
-      image-tag: v0.0.1
+      image-tag: v0.0.2
       docker-file-path: predownload-script 
 
   docker-build-model-service-fast-api:
@@ -34,6 +34,6 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     with:
       image-name: model-serving-fastapi
-      image-tag: v0.0.1
+      image-tag: v0.0.2
       docker-file-path: model_inference
 

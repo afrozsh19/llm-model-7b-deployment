@@ -1,0 +1,38 @@
+model:
+  name: "mistralai/Mistral-7B-v0.1"
+  path: "models/mistralai-7b"
+  bitAndBytes:
+    enabled: false
+
+pvc:
+  name: "model-serving-fastapi"
+  storageSize: 200Gi
+
+resources: 
+  limits:
+    cpu: 4
+    memory: 30Gi
+    nvidia.com/gpu: '1'
+  requests:
+    cpu: 2
+    memory: 15Gi
+    nvidia.com/gpu: '1'
+
+nodeSelector: 
+  nodepool: "mlops"
+
+tolerations:
+  - effect: NoSchedule
+    key: sku
+    operator: Equal
+    value: gpu
+  - effect: NoSchedule
+    key: nvidia.com/gpu
+    operator: Exists
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80

@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "model-api-app.fullname" . }}
+  labels:
+    {{- include "model-api-app.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "model-api-app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if .Values.prometheus.enabled }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ .Values.prometheus.path | quote }}
+        prometheus.io/port: {{ .Values.prometheus.port | quote }}
+      {{- end }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "model-api-app.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "model-api-app.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: model-downloader
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.modelDownloader.image.registry }}/{{ .Values.modelDownloader.image.repository }}:{{ .Values.modelDownloader.image.tag }}"
+          imagePullPolicy: {{ .Values.modelDownloader.image.pullPolicy }}
+          env:
+            - name: MODEL_NAME
+              value: {{ .Values.model.name }}
+            - name: MODEL_DIR
+              value: {{ .Values.model.path }}
+            - name: LOG_LEVEL
+              value: {{ .Values.logger.level }}
+            - name: HF_TOKEN
+              valuesFrom:
+                secretKeyRef:
+                  name: {{ include "model-api-app.fullname" . }}-secrets
+                  key: hfToken
+          volumeMounts:
+            - name: model-storage
+              mountPath: {{ .Values.model.path }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: MODEL_NAME
+              value: {{ .Values.model.name }}
+            - name: MODEL_DIR
+              value: {{ .Values.model.path }}
+            - name: LOG_LEVEL
+              value: {{ .Values.logger.level }}
+            - name: BITS_AND_BYTES
+              value: {{ .Values.model.bitAndBytes.enabled | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: model-storage
+              mountPath: {{ .Values.model.path }}
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.pvc.name }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

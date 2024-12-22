@@ -59,7 +59,6 @@ def main():
     hf_token = os.getenv("HF_TOKEN")
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
-    print(log_level)
     # configure logging
     logger = log_config(log_level)
 
