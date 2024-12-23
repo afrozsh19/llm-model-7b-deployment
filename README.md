@@ -20,16 +20,16 @@ The solution integrates optional Prometheus monitoring, supports PVC-based model
 ## Motivation
 The idea was to build a robust and efficient model-serving infrastructure. This comes with a small amount of challenges and complexities.
 
-1. Model Size and Persistence:
+1. **Model Size and Persistence**:
     - LLMs often come with high memory utilisation, making ephemeral storage nearly impractical for each pod.
     - Using Persistent Volume Claim (PVC) or an external storage mechanism allows shared storage that ensures models are securely loaded once and reused across multiple pods. This is also essential since every model download from source like HuggingFace would mean an extract of new model artefact. Therefore, a pre-downloaded model ensures models are safely loaded from a controlled environment.
-2. Multiple Devices Across Platforms:
+2. **Multiple Devices Across Platforms**:
     - For every working environment the model files need to be loaded with its distinct configuration.
     - The FastAPI application service, identifies the current device in use and utilises the same with transformers library for model sharding and off loading.
         - CPU for low-end environments
         - GPU for accelerated inferences
         - MPS for Apple Silicon devices
-3. Fault Tolerance:
+3. **Fault Tolerance**:
     - Liveness and readiness probes are configured to call the health check endpoint in the FastAPI application, that makes a model inference call in the background to ensure the service is up and ready to serve. 
 
 ## Features
@@ -110,9 +110,28 @@ tolerations:
     key: nvidia.com/gpu
     operator: Exists
 ``` 
+This could use standard NVIDIA operator deployment within the cluster and advertising the available GPUs using the following: [Installing the NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html)
 
 ### 5. Environment Specific Configuration
 You could utilise additional values files to override the environment specific configurations as demonstrated in the [values-prod.yaml](https://github.com/afrozsh19/llm-model-7b-deployment/blob/main/model-api-app/overlays/values-prod.yaml)
+
+### 6. Containerisation 
+In the context of serving LLM and installing the required python libraries, the docker images could be heavy in terms on image sizes.
+The Dockerfile is designed with specific optimisatitons to handle a 7b version of a LLM.
+- **Multistage Build**: 
+    - The Dockerfile uses a multistage build approach to separate the build environment from the runtime environment, where foundation stage includes all of the system dependecies and python libraries. 
+    - The second stage only copies necesaary files for code run, therefore resulting in a smaller production ready image.
+- **Efficient Dependency Installation**: 
+    - The Dockerfile is application specific therefore making it platform and device agnostic. Poetry is used to manage Python dependencies, ensuring reproducibility with locked versions. 
+    - Using the Nvidia base would tie the application to a specific GPU version and device type, so, as suggested earlier it is a standard approach to deploy an NVIDIA operator in the cluster. This way when a pod is launched with GPU specific node selector and tolerations, the container will have nvidia drivers preinstalled.
+- **Slim Base Image**: 
+    - The `python:3.12-slim-bullseye` base image is chosen for its minimal size, reducing the vulnerabilities and unnecessary overhead.
+- **Shared Storage**: 
+    - The model files are kept outside the images, to make the images lighter and it makes the process of deployment efficient. 
+    - It follows the isolation process and reduces dependencies, for example, in case model needs to be updated, it wouldn't require building the heavy image and vice versa if application needs to be added with features it could be done easier.
+- **Environment Variables for Configuration**: 
+    - All the essential variables are consumed through environment variables, which supports device and platform agnosticism. 
+    - For example, to enable debugging instead of launching the container on local, developers could set the log-level to Debug and monitor the progress in development environment on a cluster.
 
 ## Monitoring Configurations
 The model deployment helm chart includes an optional monitoring configuration. The monitoring configuration can be enabled using values file with parameter `.Values.prometheus.enabled`, which will result in deployment of prometheus standard helm chart. The deployment of prometheus helm chart is managed through [Chart.yaml](https://github.com/afrozsh19/llm-model-7b-deployment/blob/main/model-api-app/Chart.yaml)
@@ -224,3 +243,31 @@ The chart is customisable using the parameters below:
 | autoscaling.maxReplicas                       | The maximum number of pods that can be created to handle peak traffic. |
 | autoscaling.targetCPUUtilizationPercentage    | The average CPU utilization percentage at which the HPA will scale pods up or down. |
 | autoscaling.targetMemoryUtilizationPercentage	| The average Memory utilization percentage at which the HPA will scale pods up or down. |
+
+## Future Work
+### Application Features
+- **RayServe Integration**: We could wrap the fastAPI application with ray serve using code like below:
+    ```
+    import ray
+    import requests
+    from fastapi import FastAPI
+    from ray import serve
+
+    app = FastAPI()
+
+
+    @app.get("/")
+    def f():
+        return "Hello from the root!"
+
+
+    @serve.deployment
+    @serve.ingress(app)
+    class FastAPIWrapper:
+        pass
+    ```
+    This integration would enable distributed scaling of backend services and manage multiple replicas. This could also help easily manage the load balancing and autoscaling at pod level.
+
+- **Deepspeed or Tensor Prallelism for large model in multiple GPUs**:
+    Although, utilising `device_map=auto` for noew solves the issue on CPU and GPU model offloading. However, for larger models it is essential to use libraries similar for tensor parallel or deepspeed to optimise the GPU usage and offload large models on multiple gpus.
+    We can follow the implementation mentioned for HuggingFace models - https://github.com/huggingface/transformers/blob/v4.47.1/src/transformers/integrations/deepspeed.py
