@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/llvm-config-9 /usr/bin/llvm-config
 
-# install PDM
+# install poetry
 RUN pip install -U pip setuptools wheel
 RUN pip install --no-cache-dir poetry
 
@@ -34,6 +34,7 @@ COPY pyproject.toml poetry.toml /code/
 RUN poetry lock && \
     poetry install --no-root --only main
 
+# Second stage of docker build 
 FROM python:3.12-slim-bullseye
 
 COPY --from=foundation /usr/local /usr/local

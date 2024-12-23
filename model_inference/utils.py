@@ -9,13 +9,10 @@ from fastapi.responses import JSONResponse
 
 
 CONFIG = {
-    "model_name": os.getenv("MODEL_NAME", "NickyNicky/experimental-Mistral-1b-V00"),
-    "model_path": os.getenv("MODEL_DIR", "../models/mistral-1b/"),
+    "model_name": os.getenv("MODEL_NAME", ""),
+    "model_path": os.getenv("MODEL_DIR", "../models/"),
     "debug": os.getenv("LOG_LEVEL", "INFO").upper() == "DEBUG",
     "log_level": os.getenv("LOG_LEVEL", "INFO").upper(),
-    "num_gpu_instances": os.getenv("NUM_GPU_INSTANCES", 1),
-    "num_cpu_instances": os.getenv("NUM_CPU_INSTANCES", 1),
-    "num_replicas": os.getenv("NUM_REPLICAS", 1),
     "use_bits_and_bytes": os.getenv("BITS_AND_BYTES", "false").lower() == "true"
 }
 
@@ -42,6 +39,7 @@ def get_error_response(e, include_traceback: bool):
     
     return response
 
+
 async def validation_error_response(request: Request, e: RequestValidationError):
     """
     Returns a formatted error JSON response for a request validation error
@@ -50,6 +48,7 @@ async def validation_error_response(request: Request, e: RequestValidationError)
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=get_error_response(e, CONFIG["debug"])
     )
+
 
 async def python_error_response(request: Request, e: Exception):
     """
